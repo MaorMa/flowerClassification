@@ -5,7 +5,8 @@ from keras.preprocessing import image
 from keras import layers
 from keras import models
 from keras.models import load_model
-from keras.layers import Dense, Flatten, Dropout, Convolution2D, Activation, MaxPooling2D, Conv2D, BatchNormalization
+from keras.layers import Dense, Flatten, Dropout, Convolution2D, Activation, MaxPooling2D, Conv2D, BatchNormalization, \
+    ZeroPadding2D
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 import cv2
@@ -30,29 +31,37 @@ def run_model():
     valid_gen = train.flow_from_directory(flower_path, target_size=(img_size, img_size), batch_size=batch_size,
                                           class_mode='categorical', subset='validation')
 
-    model.add(Conv2D(32, kernel_size=(5, 5), activation='relu', input_shape=(128, 128, 3), padding='same'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(25, kernel_size=(5, 5), activation='relu', input_shape=(128, 128, 3)))
     model.add(BatchNormalization())
-    model.add(Conv2D(64, kernel_size=(5, 5), activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    # layer number 2
+    model.add(Conv2D(50, kernel_size=(5, 5), activation='relu'))
     model.add(BatchNormalization())
-    model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    # layer number 3
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Conv2D(64, kernel_size=(5, 5), activation='relu'))
     model.add(BatchNormalization())
-    model.add(Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    # layer number 4
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
     model.add(BatchNormalization())
-    model.add(Conv2D(256, kernel_size=(2, 2), activation='relu', padding='same'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(BatchNormalization())
-    model.add(Dropout(0.5))
     model.add(Flatten())
+
+    # layer number 6
+    model.add(Dense(256, activation='relu'))
     model.add(Dense(512, activation='relu'))
     model.add(layers.Dense(classes, activation='softmax'))
 
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-    model_hist = model.fit_generator(train_gen, steps_per_epoch=t_steps, epochs=35, validation_data=valid_gen,
+    model_hist = model.fit_generator(train_gen, steps_per_epoch=t_steps, epochs=30, validation_data=valid_gen,
                                      validation_steps=v_steps)
+    plt_modle(model_hist)
     model.save('flowers_model.h5')
     plt_modle(model_hist)
 
@@ -142,6 +151,12 @@ class Gui:
         self.start_classification = Button(master, text="Run Classification", command=start_classification)
         self.start_classification.pack()
 
+        self.label3 = Label(master, text="Train a model")
+        self.label3.pack()
+
+        self.run_model = Button(master, text="Train model", command=run_model)
+        self.run_model.pack()
+
         self.close_button = Button(master, text="Close", command=master.quit)
         self.close_button.pack()
 
@@ -200,7 +215,7 @@ folder_path = StringVar()
 model_c = False
 folder_c = False
 #
-root.geometry("400x200")
+root.geometry("400x250")
 root.resizable(0,0)
 my_gui = Gui(root)
 root.mainloop()
